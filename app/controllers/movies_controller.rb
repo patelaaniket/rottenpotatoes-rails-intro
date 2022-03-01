@@ -9,10 +9,22 @@ class MoviesController < ApplicationController
 
   def index
     
+    if params[:sort].nil? && params[:ratings].nil? && (!session[:sort].nil? || !session[:ratings].nil?)
+      flash.keep
+      redirect_to movies_path(:sort => session[:sort], :ratings => session[:ratings])
+    end
+    
+    if params[:sort].nil? && !(session[:sort].nil?)
+      params[:sort] = session[:sort]
+    end
+    if params[:ratings].nil? && !(session[:sort].nil?)
+      params[:ratings] = session[:ratings]
+    end
+    
     @all_ratings = Movie.ratings
     @sort = params[:sort]
-    params[:ratings].nil? ? temp = Movie.ratings : temp = params[:ratings].keys
-    @movies = Movie.where(rating: temp).order(@sort)
+    params[:ratings].nil? ? @temp = Movie.ratings : @temp = params[:ratings].keys
+    @movies = Movie.where(rating: @temp).order(session[:sort])
     
    
     @ratings = params[:ratings] 
@@ -22,6 +34,7 @@ class MoviesController < ApplicationController
         all_ratings[rating] = true
         all_ratings
       end
+
     else
       @all_ratings = Movie.ratings.inject(Hash.new) do |all_ratings, rating|
         all_ratings[rating] = @ratings.nil? ? false : @ratings.has_key?(rating)
@@ -29,7 +42,6 @@ class MoviesController < ApplicationController
       end
     end
       
-    
     session[:sort] = @sort
     session[:ratings] = @ratings
   end
